@@ -1,0 +1,6 @@
+MX6ULEVK BOARD
+M:	Jay Carlson <jay.d.carlson@gmail.com>
+S:	Maintained
+F:	board/jay/mx6ul_breakout/
+F:	include/configs/mx6ul_breakout.h
+F:	configs/mx6ul_breakout_defconfig
