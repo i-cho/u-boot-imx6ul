@@ -81,6 +81,7 @@ int mmc_getwp(struct mmc *mmc)
 
 __weak int board_mmc_getcd(struct mmc *mmc)
 {
+	debug("SPL MMC: No board_mmc_getcd() found. Returning -1\r\n");
 	return -1;
 }
 #endif
@@ -2497,6 +2498,8 @@ int mmc_start_init(struct mmc *mmc)
 #endif
 #if !CONFIG_IS_ENABLED(DM_MMC)
 	no_card = no_card || (mmc->cfg->ops->init == NULL);
+	if(mmc->cfg->ops->init == NULL)
+		debug("mmc->cfg->ops->init is NULL\r\n");
 #endif
 	if (no_card) {
 		mmc->has_init = 0;
