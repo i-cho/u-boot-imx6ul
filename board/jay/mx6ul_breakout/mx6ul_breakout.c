@@ -12,9 +12,9 @@
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
-#include <asm/imx-common/iomux-v3.h>
-#include <asm/imx-common/boot_mode.h>
-#include <asm/imx-common/mxc_i2c.h>
+#include <asm/mach-imx/iomux-v3.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <asm/mach-imx/mxc_i2c.h>
 #include <asm/io.h>
 #include <common.h>
 #include <fsl_esdhc.h>
@@ -24,14 +24,12 @@
 #include <mmc.h>
 #include <netdev.h>
 #include <power/pmic.h>
-// #include <power/pfuze3000_pmic.h>
-// #include "../../freescake/common/pfuze.h"
+#include <power/pfuze3000_pmic.h>
+#include "../common/pfuze.h"
 #include <usb.h>
 #include <usb/ehci-ci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-
-#define CONFIG_FSL_ESDHC
 
 #define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
 	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |		\
@@ -155,65 +153,65 @@ static void iox74lv_init(void)
 	gpio_direction_output(IOX_STCP, 1);
 };
 
-// #ifdef CONFIG_SYS_I2C_MXC
-// #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
-// /* I2C1 for PMIC and EEPROM */
-// static struct i2c_pads_info i2c_pad_info1 = {
-// 	.scl = {
-// 		.i2c_mode =  MX6_PAD_UART4_TX_DATA__I2C1_SCL | PC,
-// 		.gpio_mode = MX6_PAD_UART4_TX_DATA__GPIO1_IO28 | PC,
-// 		.gp = IMX_GPIO_NR(1, 28),
-// 	},
-// 	.sda = {
-// 		.i2c_mode = MX6_PAD_UART4_RX_DATA__I2C1_SDA | PC,
-// 		.gpio_mode = MX6_PAD_UART4_RX_DATA__GPIO1_IO29 | PC,
-// 		.gp = IMX_GPIO_NR(1, 29),
-// 	},
-// };
+#ifdef CONFIG_SYS_I2C_MXC
+#define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+/* I2C1 for PMIC and EEPROM */
+static struct i2c_pads_info i2c_pad_info1 = {
+	.scl = {
+		.i2c_mode =  MX6_PAD_UART4_TX_DATA__I2C1_SCL | PC,
+		.gpio_mode = MX6_PAD_UART4_TX_DATA__GPIO1_IO28 | PC,
+		.gp = IMX_GPIO_NR(1, 28),
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_UART4_RX_DATA__I2C1_SDA | PC,
+		.gpio_mode = MX6_PAD_UART4_RX_DATA__GPIO1_IO29 | PC,
+		.gp = IMX_GPIO_NR(1, 29),
+	},
+};
 
-// #ifdef CONFIG_POWER
-// #define I2C_PMIC       0
-// int power_init_board(void)
-// {
-// 	if (is_mx6ul_9x9_evk()) {
-// 		struct pmic *pfuze;
-// 		int ret;
-// 		unsigned int reg, rev_id;
+#ifdef CONFIG_POWER
+#define I2C_PMIC       0
+int power_init_board(void)
+{
+	if (is_mx6ul_9x9_evk()) {
+		struct pmic *pfuze;
+		int ret;
+		unsigned int reg, rev_id;
 
-// 		ret = power_pfuze3000_init(I2C_PMIC);
-// 		if (ret)
-// 			return ret;
+		ret = power_pfuze3000_init(I2C_PMIC);
+		if (ret)
+			return ret;
 
-// 		pfuze = pmic_get("PFUZE3000");
-// 		ret = pmic_probe(pfuze);
-// 		if (ret)
-// 			return ret;
+		pfuze = pmic_get("PFUZE3000");
+		ret = pmic_probe(pfuze);
+		if (ret)
+			return ret;
 
-// 		pmic_reg_read(pfuze, PFUZE3000_DEVICEID, &reg);
-// 		pmic_reg_read(pfuze, PFUZE3000_REVID, &rev_id);
-// 		printf("PMIC: PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n",
-// 		       reg, rev_id);
+		pmic_reg_read(pfuze, PFUZE3000_DEVICEID, &reg);
+		pmic_reg_read(pfuze, PFUZE3000_REVID, &rev_id);
+		printf("PMIC: PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n",
+		       reg, rev_id);
 
-// 		/* disable Low Power Mode during standby mode */
-// 		pmic_reg_write(pfuze, PFUZE3000_LDOGCTL, 0x1);
+		/* disable Low Power Mode during standby mode */
+		pmic_reg_write(pfuze, PFUZE3000_LDOGCTL, 0x1);
 
-// 		/* SW1B step ramp up time from 2us to 4us/25mV */
-// 		reg = 0x40;
-// 		pmic_reg_write(pfuze, PFUZE3000_SW1BCONF, reg);
+		/* SW1B step ramp up time from 2us to 4us/25mV */
+		reg = 0x40;
+		pmic_reg_write(pfuze, PFUZE3000_SW1BCONF, reg);
 
-// 		/* SW1B mode to APS/PFM */
-// 		reg = 0xc;
-// 		pmic_reg_write(pfuze, PFUZE3000_SW1BMODE, reg);
+		/* SW1B mode to APS/PFM */
+		reg = 0xc;
+		pmic_reg_write(pfuze, PFUZE3000_SW1BMODE, reg);
 
-// 		/* SW1B standby voltage set to 0.975V */
-// 		reg = 0xb;
-// 		pmic_reg_write(pfuze, PFUZE3000_SW1BSTBY, reg);
-// 	}
+		/* SW1B standby voltage set to 0.975V */
+		reg = 0xb;
+		pmic_reg_write(pfuze, PFUZE3000_SW1BSTBY, reg);
+	}
 
-// 	return 0;
-// }
-// #endif
-// #endif
+	return 0;
+}
+#endif
+#endif
 
 int dram_init(void)
 {
@@ -227,6 +225,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
+#ifndef CONFIG_SPL_BUILD
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_CMD__USDHC1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -242,6 +241,7 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	/* RST_B */
 	MX6_PAD_GPIO1_IO09__GPIO1_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
+#endif
 
 /*
  * mx6ul_14x14_evk board default supports sd card. If want to use
@@ -338,17 +338,14 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 
 int board_mmc_getcd(struct mmc *mmc)
 {
-	debug("SPL: mx6ul-breakout board_mmc_getcd() called...");
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
 	int ret = 0;
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		debug("getting CD of USDHC1...");
 		ret = !gpio_get_value(USDHC1_CD_GPIO);
 		break;
 	case USDHC2_BASE_ADDR:
-	debug("getting CD of USDHC2...");
 #if defined(CONFIG_MX6UL_14X14_EVK_EMMC_REWORK)
 		ret = 1;
 #else
@@ -364,12 +361,8 @@ int board_mmc_getcd(struct mmc *mmc)
 		imx_iomux_v3_setup_pad(usdhc2_dat3_pad);
 #endif
 		break;
-		default:
-			debug("Called with unknown USDHC address %d...", cfg->esdhc_base);
-			break;
 	}
 
-	debug("returning %d\r\n", ret);
 	return ret;
 }
 
@@ -609,7 +602,7 @@ static iomux_v3_cfg_t const lcd_pads[] = {
 
 static int setup_lcd(void)
 {
-	enable_lcdif_clock(LCDIF1_BASE_ADDR);
+	enable_lcdif_clock(LCDIF1_BASE_ADDR, 1);
 
 	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
@@ -641,6 +634,9 @@ int board_init(void)
 
 	iox74lv_init();
 
+#ifdef CONFIG_SYS_I2C_MXC
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+#endif
 
 #ifdef	CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);
@@ -678,12 +674,12 @@ int board_late_init(void)
 #endif
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
-	setenv("board_name", "EVK");
+	env_set("board_name", "EVK");
 
 	if (is_mx6ul_9x9_evk())
-		setenv("board_rev", "9X9");
+		env_set("board_rev", "9X9");
 	else
-		setenv("board_rev", "14X14");
+		env_set("board_rev", "14X14");
 #endif
 
 	return 0;
@@ -700,7 +696,7 @@ int checkboard(void)
 }
 
 #ifdef CONFIG_SPL_BUILD
-#include <libfdt.h>
+#include <linux/libfdt.h>
 #include <spl.h>
 #include <asm/arch/mx6-ddr.h>
 
