@@ -25,7 +25,7 @@
 #include <netdev.h>
 #include <power/pmic.h>
 #include <power/pfuze3000_pmic.h>
-#include "../common/pfuze.h"
+
 #include <usb.h>
 #include <usb/ehci-ci.h>
 
@@ -169,48 +169,6 @@ static struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-#ifdef CONFIG_POWER
-#define I2C_PMIC       0
-int power_init_board(void)
-{
-	if (is_mx6ul_9x9_evk()) {
-		struct pmic *pfuze;
-		int ret;
-		unsigned int reg, rev_id;
-
-		ret = power_pfuze3000_init(I2C_PMIC);
-		if (ret)
-			return ret;
-
-		pfuze = pmic_get("PFUZE3000");
-		ret = pmic_probe(pfuze);
-		if (ret)
-			return ret;
-
-		pmic_reg_read(pfuze, PFUZE3000_DEVICEID, &reg);
-		pmic_reg_read(pfuze, PFUZE3000_REVID, &rev_id);
-		printf("PMIC: PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n",
-		       reg, rev_id);
-
-		/* disable Low Power Mode during standby mode */
-		pmic_reg_write(pfuze, PFUZE3000_LDOGCTL, 0x1);
-
-		/* SW1B step ramp up time from 2us to 4us/25mV */
-		reg = 0x40;
-		pmic_reg_write(pfuze, PFUZE3000_SW1BCONF, reg);
-
-		/* SW1B mode to APS/PFM */
-		reg = 0xc;
-		pmic_reg_write(pfuze, PFUZE3000_SW1BMODE, reg);
-
-		/* SW1B standby voltage set to 0.975V */
-		reg = 0xb;
-		pmic_reg_write(pfuze, PFUZE3000_SW1BSTBY, reg);
-	}
-
-	return 0;
-}
-#endif
 #endif
 
 int dram_init(void)
@@ -225,7 +183,6 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
-#ifndef CONFIG_SPL_BUILD
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_CMD__USDHC1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -241,7 +198,6 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	/* RST_B */
 	MX6_PAD_GPIO1_IO09__GPIO1_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
-#endif
 
 /*
  * mx6ul_14x14_evk board default supports sd card. If want to use
@@ -320,15 +276,11 @@ static int board_qspi_init(void)
 	return 0;
 }
 #endif
-
+#define CONFIG_FSL_ESDHC
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC1_BASE_ADDR, 0, 4},
-#if defined(CONFIG_MX6UL_14X14_EVK_EMMC_REWORK)
-	{USDHC2_BASE_ADDR, 0, 8},
-#else
 	{USDHC2_BASE_ADDR, 0, 4},
-#endif
 };
 
 #define USDHC1_CD_GPIO	IMX_GPIO_NR(1, 19)
@@ -343,9 +295,11 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
+		debug("asking USDHC1", ret);
 		ret = !gpio_get_value(USDHC1_CD_GPIO);
 		break;
 	case USDHC2_BASE_ADDR:
+		debug("asking USDHC2", ret);
 #if defined(CONFIG_MX6UL_14X14_EVK_EMMC_REWORK)
 		ret = 1;
 #else
@@ -362,24 +316,20 @@ int board_mmc_getcd(struct mmc *mmc)
 #endif
 		break;
 	}
-
+	debug("returning: %d", ret);
 	return ret;
 }
 
 int board_mmc_init(bd_t *bis)
 {
+
 #ifdef CONFIG_SPL_BUILD
-#if defined(CONFIG_MX6UL_14X14_EVK_EMMC_REWORK)
-	imx_iomux_v3_setup_multiple_pads(usdhc2_emmc_pads,
-					 ARRAY_SIZE(usdhc2_emmc_pads));
-#else
-	imx_iomux_v3_setup_multiple_pads(usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
-#endif
-	gpio_direction_output(USDHC2_PWR_GPIO, 0);
+	imx_iomux_v3_setup_multiple_pads(usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
+	gpio_direction_output(USDHC1_PWR_GPIO, 0);
 	udelay(500);
-	gpio_direction_output(USDHC2_PWR_GPIO, 1);
-	usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
-	return fsl_esdhc_initialize(bis, &usdhc_cfg[1]);
+	gpio_direction_output(USDHC1_PWR_GPIO, 1);
+	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 #else
 	int i, ret;
 

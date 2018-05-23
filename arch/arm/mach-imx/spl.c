@@ -23,6 +23,8 @@ DECLARE_GLOBAL_DATA_PTR;
 /* determine boot device from SRC_SBMR1 (BOOT_CFG[4:1]) or SRC_GPR9 register */
 u32 spl_boot_device(void)
 {
+	return BOOT_DEVICE_MMC1;
+	
 	unsigned int bmode = readl(&src_base->sbmr2);
 	u32 reg = imx6_src_get_boot_mode();
 

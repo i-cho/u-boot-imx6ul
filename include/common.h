@@ -10,7 +10,7 @@
 
 #ifndef __ASSEMBLY__		/* put C only stuff in this section */
 
-#define DEBUG
+// #define DEBUG
 
 typedef unsigned char		uchar;
 typedef volatile unsigned long	vu_long;
