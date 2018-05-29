@@ -666,61 +666,6 @@ static struct mx6ul_iomux_grp_regs mx6_grp_ioregs = {
 #endif
 };
 
-#ifdef CONFIG_TARGET_MX6UL_9X9_EVK
-static struct mx6ul_iomux_ddr_regs mx6_ddr_ioregs = {
-	.dram_dqm0 = 0x00000030,
-	.dram_dqm1 = 0x00000030,
-	.dram_ras = 0x00000030,
-	.dram_cas = 0x00000030,
-	.dram_odt0 = 0x00000000,
-	.dram_odt1 = 0x00000000,
-	.dram_sdba2 = 0x00000000,
-	.dram_sdclk_0 = 0x00000030,
-	.dram_sdqs0 = 0x00003030,
-	.dram_sdqs1 = 0x00003030,
-	.dram_reset = 0x00000030,
-};
-
-static struct mx6_mmdc_calibration mx6_mmcd_calib = {
-	.p0_mpwldectrl0 = 0x00000000,
-	.p0_mpdgctrl0 = 0x20000000,
-	.p0_mprddlctl = 0x4040484f,
-	.p0_mpwrdlctl = 0x40405247,
-	.mpzqlp2ctl = 0x1b4700c7,
-};
-
-static struct mx6_lpddr2_cfg mem_ddr = {
-	.mem_speed = 800,
-	.density = 2,
-	.width = 16,
-	.banks = 4,
-	.rowaddr = 14,
-	.coladdr = 10,
-	.trcd_lp = 1500,
-	.trppb_lp = 1500,
-	.trpab_lp = 2000,
-	.trasmin = 4250,
-};
-
-struct mx6_ddr_sysinfo ddr_sysinfo = {
-	.dsize = 0,
-	.cs_density = 18,
-	.ncs = 1,
-	.cs1_mirror = 0,
-	.walat = 0,
-	.ralat = 5,
-	.mif3_mode = 3,
-	.bi_on = 1,
-	.rtt_wr = 0,        /* LPDDR2 does not need rtt_wr rtt_nom */
-	.rtt_nom = 0,
-	.sde_to_rst = 0,    /* LPDDR2 does not need this field */
-	.rst_to_cke = 0x10, /* JEDEC value for LPDDR2: 200us */
-	.ddr_type = DDR_TYPE_LPDDR2,
-	.refsel = 0,	/* Refresh cycles at 64KHz */
-	.refr = 3,	/* 4 refresh commands per refresh cycle */
-};
-
-#else
 static struct mx6ul_iomux_ddr_regs mx6_ddr_ioregs = {
 	.dram_dqm0 = 0x00000030,
 	.dram_dqm1 = 0x00000030,
@@ -736,10 +681,10 @@ static struct mx6ul_iomux_ddr_regs mx6_ddr_ioregs = {
 };
 
 static struct mx6_mmdc_calibration mx6_mmcd_calib = {
-	.p0_mpwldectrl0 = 0x00000000,
-	.p0_mpdgctrl0 = 0x41570155,
-	.p0_mprddlctl = 0x4040474A,
-	.p0_mpwrdlctl = 0x40405550,
+	.p0_mpwldectrl0 = 0x001F0000,
+	.p0_mpdgctrl0 = 0x414C014C,
+	.p0_mprddlctl = 0x40405056,
+	.p0_mpwrdlctl = 0x40405246,
 };
 
 struct mx6_ddr_sysinfo ddr_sysinfo = {
@@ -772,7 +717,7 @@ static struct mx6_ddr3_cfg mem_ddr = {
 	.trcmin = 4875,
 	.trasmin = 3500,
 };
-#endif
+
 
 static void ccgr_init(void)
 {
